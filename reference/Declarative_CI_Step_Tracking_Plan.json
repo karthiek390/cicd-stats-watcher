@@ -1,0 +1,311 @@
+{
+  "project": "Declarative CI Step Tracking for Watcher",
+  "goal": "Turn ci-watcher from repo-specific instrumentation into a config-driven, reusable CI observability toolkit for self-hosted GitHub Actions runners, while minimizing repeated watcher-specific edits in CI.yml.",
+  "summary": {
+    "problem": "The current workflow requires manual watcher wiring in CI.yml whenever new tracked jobs or step boundaries are added.",
+    "approach": "Introduce a generated CI inventory, one editable watcher manifest, and one generic runtime wrapper so tracking behavior is driven by config rather than repeated custom workflow code.",
+    "non_goals_for_v1": [
+      "Do not infer shell subcommands inside arbitrary run blocks.",
+      "Do not redesign the live or final report yet.",
+      "Do not remove watcher startup and shutdown from CI.yml."
+    ],
+    "defaults": {
+      "source_of_truth": "Separate editable watcher manifest",
+      "tracking_granularity": "Named GitHub Actions steps only",
+      "runtime_integration": "Generic wrapper/helper",
+      "metrics_configuration": "Inline per job/step in the same manifest"
+    }
+  },
+  "phases": [
+    {
+      "phase": "Phase 1 - Inventory Extraction Foundation",
+      "priority": "high",
+      "objective": "Create a deterministic, generated representation of the CI workflow structure so watcher-related tracking can reference jobs and step names without manually duplicating CI.yml content.",
+      "deliverables": [
+        "tools/ci-watcher/extract_ci_inventory.py",
+        "tools/ci-watcher/generated-ci-inventory.yaml"
+      ],
+      "tasks": [
+        {
+          "id": "P1-T1",
+          "title": "Parse CI.yml into a normalized inventory",
+          "status": "completed",
+          "description": "Read .github/workflows/CI.yml and extract job ids, optional job display names, and ordered named step entries into a deterministic generated file.",
+          "outputs": [
+            "workflow path",
+            "generated timestamp or version stamp",
+            "jobs[].job_id",
+            "jobs[].job_name",
+            "jobs[].steps[]"
+          ],
+          "notes": [
+            "Ignore anonymous steps and do not parse shell subcommands in v1.",
+            "Preserve step order exactly as it appears in CI.yml."
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P1-T2",
+          "title": "Make generated output deterministic and reviewable",
+          "status": "completed",
+          "description": "Ensure repeated runs on unchanged CI.yml produce stable output that is easy to diff in code review.",
+          "outputs": [
+            "stable field ordering",
+            "stable job ordering",
+            "stable step ordering"
+          ],
+          "notes": [
+            "Do not include noisy metadata that changes every run unless it is intentionally useful."
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Editable Watcher Manifest",
+      "priority": "high",
+      "objective": "Introduce one editable config file that becomes the canonical source of truth for what should be tracked and which metrics should be collected.",
+      "deliverables": [
+        "tools/ci-watcher/watcher-manifest.yaml"
+      ],
+      "tasks": [
+        {
+          "id": "P2-T1",
+          "title": "Define manifest schema for jobs and steps",
+          "status": "completed",
+          "description": "Create a compact YAML schema that models tracked jobs and their tracked named steps.",
+          "outputs": [
+            "manifest version",
+            "global metric defaults",
+            "jobs[].job_id",
+            "jobs[].track",
+            "jobs[].metrics",
+            "jobs[].steps[].name",
+            "jobs[].steps[].track",
+            "jobs[].steps[].metrics"
+          ],
+          "notes": [
+            "Jobs default to true for tracking in v1.",
+            "Steps default to false for tracking in v1."
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P2-T2",
+          "title": "Keep metrics configuration inline in the manifest",
+          "status": "completed",
+          "description": "Store toggles such as storage, docker, cpu, memory, and inode in the same manifest entry rather than splitting them into a second file.",
+          "outputs": [
+            "single editable config file",
+            "per-job metric overrides",
+            "per-step metric overrides"
+          ],
+          "notes": [
+            "Avoid config sprawl in v1.",
+            "Use manifest-level defaults with per-entry overrides."
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Inventory and Manifest Validation",
+      "priority": "medium",
+      "objective": "Prevent drift between the generated CI inventory and the editable watcher manifest so step tracking remains reliable as the workflow evolves.",
+      "deliverables": [
+        "tools/ci-watcher/validate_watcher_manifest.py"
+      ],
+      "tasks": [
+        {
+          "id": "P3-T1",
+          "title": "Validate manifest job ids against generated inventory",
+          "status": "completed",
+          "description": "Check that every job configured in the watcher manifest exists in the generated inventory and report any unknown or missing job ids.",
+          "outputs": [
+            "unknown job detection",
+            "missing job detection",
+            "clear validation messages"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P3-T2",
+          "title": "Validate step names under each job",
+          "status": "completed",
+          "description": "Ensure each manifest step name maps to a named step in the extracted workflow inventory for that job.",
+          "outputs": [
+            "unknown step detection",
+            "job/step mismatch detection"
+          ],
+          "notes": [
+            "Validation should be conservative and human-readable."
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P3-T3",
+          "title": "Keep validation outside the critical runtime path",
+          "status": "completed",
+          "description": "Validation failures should be surfaced as a checker or explicit CI step rather than causing the watcher runtime to fail unexpectedly.",
+          "outputs": [
+            "separate validation command",
+            "optional CI validation step"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Generic Runtime Wrapper",
+      "priority": "high",
+      "objective": "Replace scattered direct watcher boundary calls with one generic helper that decides at runtime whether a job or step should be tracked.",
+      "deliverables": [
+        "tools/ci-watcher/run_tracked_step.sh"
+      ],
+      "tasks": [
+        {
+          "id": "P4-T1",
+          "title": "Create generic tracked-step wrapper",
+          "status": "completed",
+          "description": "Build a reusable helper that receives job id and step name, consults the watcher manifest, and decides whether to emit begin/end capture boundaries.",
+          "inputs": [
+            "job_id",
+            "step_name",
+            "stats_dir",
+            "pr",
+            "command or delegated execution mode"
+          ],
+          "outputs": [
+            "no-op pass-through for untracked steps",
+            "before/after capture for tracked steps"
+          ],
+          "notes": [
+            "Reuse the existing mark_step.sh mechanism in v1.",
+            "Do not redesign watcher.sh in this phase."
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P4-T2",
+          "title": "Keep wrapper failures non-fatal",
+          "status": "completed",
+          "description": "Ensure tracking decisions or metric collection failures do not break the underlying CI step execution.",
+          "outputs": [
+            "safe fallback behavior",
+            "logging for skipped or invalid entries"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - CI Workflow Integration Cleanup",
+      "priority": "medium",
+      "objective": "Reduce repeated watcher-specific logic in CI.yml while preserving explicit lifecycle control and compatibility with the current pipeline.",
+      "deliverables": [
+        "Reduced direct mark_step.sh usage in .github/workflows/CI.yml",
+        "Manifest-driven tracked step boundaries"
+      ],
+      "tasks": [
+        {
+          "id": "P5-T1",
+          "title": "Keep explicit watcher lifecycle in CI.yml",
+          "status": "completed",
+          "description": "Retain startup, shutdown, and final report generation as explicit workflow steps while limiting per-step tracking logic to the generic wrapper.",
+          "outputs": [
+            "setup step retained",
+            "finalization step retained"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P5-T2",
+          "title": "Migrate selected tracked steps to the generic wrapper",
+          "status": "completed",
+          "description": "Replace direct watcher begin/end calls in representative jobs such as build, test, preview-up, and cleanup with the generic wrapper.",
+          "outputs": [
+            "tracked build steps",
+            "tracked test steps",
+            "tracked preview-up steps",
+            "tracked cleanup steps"
+          ],
+          "notes": [
+            "Use a gradual migration rather than rewriting the full workflow at once."
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P5-T3",
+          "title": "Preserve coarse live stage updates for now",
+          "status": "completed",
+          "description": "Retain /tmp/ci-stage-* writes for high-level progress until a future phase replaces or unifies that mechanism.",
+          "outputs": [
+            "existing coarse stage visibility"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Reusability and Adoption Path",
+      "priority": "medium",
+      "objective": "Make ci-watcher easier to adopt in other self-hosted GitHub Actions projects with minimal workflow-specific customization.",
+      "deliverables": [
+        "Documented adoption contract",
+        "Bootstrap/finalize integration guidance"
+      ],
+      "tasks": [
+        {
+          "id": "P6-T1",
+          "title": "Define a minimal adoption contract",
+          "status": "completed",
+          "description": "Document the smallest required integration surface so a new project can adopt ci-watcher with setup, finalize, and optional tracked-step wrapper usage.",
+          "outputs": [
+            "setup requirements",
+            "runner assumptions",
+            "artifact expectations",
+            "manifest location expectations"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P6-T2",
+          "title": "Separate reusable conventions from repo-specific assumptions",
+          "status": "completed",
+          "description": "Identify which parts of the current Xenium-specific flow must remain project-specific and which can become generic defaults.",
+          "outputs": [
+            "generic conventions list",
+            "repo-specific assumptions list"
+          ],
+          "notes": [
+            "Examples include preview stack specifics, compose project naming, and repo-specific report sections."
+          ],
+          "Completed and verified": true
+        }
+      ]
+    }
+  ],
+  "test_plan": {
+    "scenarios": [
+      "Extract inventory from the current CI.yml and confirm all expected major jobs are present.",
+      "Confirm ordered named steps are preserved for build, test, preview-up, and cleanup.",
+      "Validate a manifest that includes tracked jobs and tracked steps against the generated inventory.",
+      "Run the generic wrapper for one tracked step and one untracked step and verify begin/end behavior differs appropriately.",
+      "Confirm watcher runtime remains non-fatal when the manifest is missing or contains entries that do not match a runtime step.",
+      "Confirm current report generation and stats artifact flow remain intact."
+    ],
+    "acceptance_criteria": [
+      "One generated inventory file exists and is deterministic.",
+      "One editable watcher manifest exists and can control job/step tracking.",
+      "A generic wrapper can replace repeated direct watcher step calls for selected jobs.",
+      "The current CI watcher and report pipeline still function without regressions."
+    ]
+  },
+  "assumptions": [
+    "Named GitHub Actions steps are the only supported step granularity in v1.",
+    "Shell subcommand inference inside run blocks is out of scope for v1.",
+    "Watcher startup and final teardown remain explicit in CI.yml.",
+    "The generated inventory file is read-only and not the editable source of truth.",
+    "The editable watcher manifest is the canonical tracking configuration."
+  ]
+}

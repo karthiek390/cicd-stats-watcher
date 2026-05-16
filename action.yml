@@ -1,0 +1,100 @@
+name: "CICD Stats Watcher"
+description: "GitHub Actions-first interface for self-hosted runner stats tracking."
+author: "karthiek390"
+
+inputs:
+  mode:
+    description: "Action mode: start, track, or finalize."
+    required: true
+  job-id:
+    description: "Logical job identifier for tracked-step decisions."
+    required: false
+  step-name:
+    description: "Named GitHub Actions step to track."
+    required: false
+  stats-dir:
+    description: "Optional explicit stats directory. If omitted, the action resolves a default path."
+    required: false
+  metrics:
+    description: "Comma-separated metric names such as storage,docker,cpu,memory,inode."
+    required: false
+  command:
+    description: "Command to execute when mode=track."
+    required: false
+  working-directory:
+    description: "Optional working directory used when mode=track."
+    required: false
+  manifest-path:
+    description: "Optional path to the watcher manifest for GitHub Actions step tracking."
+    required: false
+  inline-config:
+    description: "Reserved for future inline configuration payloads."
+    required: false
+  run-server:
+    description: "Reserved flag for future live server startup behavior."
+    required: false
+    default: "false"
+
+outputs:
+  mode:
+    description: "Validated action mode."
+    value: ${{ steps.interface.outputs.mode }}
+  resolved-stats-dir:
+    description: "Resolved stats directory for this run."
+    value: ${{ steps.interface.outputs.resolved-stats-dir }}
+  report-path:
+    description: "Expected report path for the run artifact."
+    value: ${{ steps.interface.outputs.report-path }}
+  artifact-path:
+    description: "Artifact-ready directory path for this run."
+    value: ${{ steps.interface.outputs.artifact-path }}
+  metrics:
+    description: "Normalized metrics input."
+    value: ${{ steps.interface.outputs.metrics }}
+  manifest-path:
+    description: "Manifest path that will be used by later mode implementations."
+    value: ${{ steps.interface.outputs.manifest-path }}
+  meta-path:
+    description: "Path to the generated meta.json file."
+    value: ${{ steps.interface.outputs.meta-path }}
+  state-path:
+    description: "Path to the watcher runtime state file."
+    value: ${{ steps.interface.outputs.state-path }}
+  stage-file:
+    description: "Path to the stage file used by the watcher runtime."
+    value: ${{ steps.interface.outputs.stage-file }}
+  watcher-pid:
+    description: "PID of the watcher background process when mode=start."
+    value: ${{ steps.interface.outputs.watcher-pid }}
+  server-pid:
+    description: "PID of the live server background process when mode=start and run-server=true."
+    value: ${{ steps.interface.outputs.server-pid }}
+  exit-code:
+    description: "Exit code returned by the tracked command when mode=track."
+    value: ${{ steps.interface.outputs.exit-code }}
+  finalized:
+    description: "Whether finalize mode found watcher state and completed its cleanup path."
+    value: ${{ steps.interface.outputs.finalized }}
+  generated-report:
+    description: "Whether finalize mode generated report.html successfully."
+    value: ${{ steps.interface.outputs.generated-report }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: interface
+      shell: bash
+      env:
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_JOB_ID: ${{ inputs.job-id }}
+        INPUT_STEP_NAME: ${{ inputs.step-name }}
+        INPUT_STATS_DIR: ${{ inputs.stats-dir }}
+        INPUT_METRICS: ${{ inputs.metrics }}
+        INPUT_COMMAND: ${{ inputs.command }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_MANIFEST_PATH: ${{ inputs.manifest-path }}
+        INPUT_INLINE_CONFIG: ${{ inputs.inline-config }}
+        INPUT_RUN_SERVER: ${{ inputs.run-server }}
+      run: |
+        set -euo pipefail
+        bash "${GITHUB_ACTION_PATH}/action/dispatch.sh"

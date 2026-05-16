@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "goal": "Define the release boundary for the GitHub Actions-first cicd-stats-watcher packaging work.",
+  "core_runtime": [
+    "capture_system_snapshot.sh",
+    "generate_report.py",
+    "mark_step.sh",
+    "run_step.sh",
+    "run_tracked_step.sh",
+    "serve.py",
+    "watcher.sh",
+    "write_build_summary.sh",
+    "write_git_context.sh",
+    "write_summary.sh"
+  ],
+  "github_actions_adapter": [
+    "extract_ci_inventory.py",
+    "generated-ci-inventory.yaml",
+    "validate_watcher_manifest.py",
+    "watcher-manifest.yaml"
+  ],
+  "project_specific_excluded_from_v1": [
+    "cleanup_preview_slot.sh",
+    "export_preview_fixture_bundle.sh",
+    "preview_slots.py",
+    "restore_preview_fixture_bundle.sh",
+    "setup.sh"
+  ],
+  "future_action_bundle_layout": {
+    "runtime": [
+      "capture_system_snapshot.sh",
+      "generate_report.py",
+      "mark_step.sh",
+      "run_step.sh",
+      "run_tracked_step.sh",
+      "serve.py",
+      "watcher.sh",
+      "write_build_summary.sh",
+      "write_git_context.sh",
+      "write_summary.sh"
+    ],
+    "adapters/github-actions": [
+      "extract_ci_inventory.py",
+      "generated-ci-inventory.yaml",
+      "validate_watcher_manifest.py",
+      "watcher-manifest.yaml"
+    ]
+  }
+}

@@ -1,0 +1,436 @@
+{
+  "project": "CICD Stats Watcher Future Task Plan",
+  "created_from": [
+    "ci_hotspot_ai_analysis.md",
+    "CI_Hotspot_AI_Implementation_Plan.json"
+  ],
+  "status_note": "All tasks are marked completed_task:false because implementation has not started yet.",
+  "phases": [
+    {
+      "phase_id": "PH1",
+      "phase_name": "Low-Risk Foundation",
+      "difficulty": "simplest",
+      "tasks": [
+        {
+          "task_id": "PH1-T1",
+          "title": "Add workflow auto-detection",
+          "summary": "Auto-detect workflow files instead of depending on a hardcoded CI.yml path.",
+          "depends_on": [],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH1-T2",
+          "title": "Create richer YAML step extractor",
+          "summary": "Extend workflow extraction so each GitHub Actions step includes enough structured data for hotspot analysis.",
+          "depends_on": [
+            "PH1-T1"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH1-T3",
+          "title": "Build rule-based hotspot scorer",
+          "summary": "Create a heuristic engine that classifies steps as likely CPU, RAM, or storage hotspots using command patterns.",
+          "depends_on": [
+            "PH1-T2"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH1-T4",
+          "title": "Add script content resolver",
+          "summary": "Resolve referenced scripts such as sh ./build.sh and inspect their contents to improve hotspot scoring.",
+          "depends_on": [
+            "PH1-T3"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH1-T5",
+          "title": "Create predict_hotspots.py CLI",
+          "summary": "Expose extraction and scoring through a single command-line entry point.",
+          "depends_on": [
+            "PH1-T2",
+            "PH1-T3",
+            "PH1-T4"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH1-T6",
+          "title": "Generate watcher manifest automatically",
+          "summary": "Generate watcher-manifest.yaml from hotspot predictions instead of maintaining it manually.",
+          "depends_on": [
+            "PH1-T5"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH1-T7",
+          "title": "Update validation for generated manifests",
+          "summary": "Ensure generated manifests are validated cleanly against extracted workflow inventory.",
+          "depends_on": [
+            "PH1-T6"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        }
+      ]
+    },
+    {
+      "phase_id": "PH2",
+      "phase_name": "Workflow Integration Cleanup",
+      "difficulty": "easy-to-moderate",
+      "tasks": [
+        {
+          "task_id": "PH2-T1",
+          "title": "Integrate hotspot prediction into CI bootstrap",
+          "summary": "Run inventory extraction, prediction, manifest generation, and validation during workflow setup.",
+          "depends_on": [
+            "PH1-T5",
+            "PH1-T6",
+            "PH1-T7"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH2-T2",
+          "title": "Update run_tracked_step.sh to consume generated tracking decisions",
+          "summary": "Make the tracked-step wrapper rely on generated manifest or prediction outputs instead of only hand-edited config.",
+          "depends_on": [
+            "PH2-T1"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH2-T3",
+          "title": "Add adaptive polling for hotspot steps",
+          "summary": "Use higher-resolution monitoring for predicted hotspot steps and lower-resolution monitoring for routine steps.",
+          "depends_on": [
+            "PH2-T2"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH2-T4",
+          "title": "Reduce repeated workflow wrapper usage",
+          "summary": "Standardize wrapper usage through a cleaner reusable integration pattern such as a composite action or helper convention.",
+          "depends_on": [
+            "PH2-T2"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        }
+      ]
+    },
+    {
+      "phase_id": "PH3",
+      "phase_name": "Better Telemetry",
+      "difficulty": "moderate",
+      "tasks": [
+        {
+          "task_id": "PH3-T1",
+          "title": "Add a generic delta tracker utility",
+          "summary": "Create a reusable delta-tracking base for CPU, Docker, and disk telemetry.",
+          "depends_on": [],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH3-T2",
+          "title": "Implement CPU delta tracking",
+          "summary": "Collect proper CPU deltas inspired by Beszel instead of relying only on coarse shell snapshots.",
+          "depends_on": [
+            "PH3-T1"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH3-T3",
+          "title": "Implement disk I/O delta tracking",
+          "summary": "Track disk throughput and I/O changes during monitored CI steps.",
+          "depends_on": [
+            "PH3-T1"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH3-T4",
+          "title": "Implement Docker stats collection",
+          "summary": "Capture per-container Docker resource usage through a direct Docker API or socket-based collector.",
+          "depends_on": [
+            "PH3-T1"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH3-T5",
+          "title": "Update mark_step.sh to use enhanced telemetry",
+          "summary": "Integrate the new telemetry collectors into step boundary snapshots.",
+          "depends_on": [
+            "PH3-T2",
+            "PH3-T3",
+            "PH3-T4"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH3-T6",
+          "title": "Validate telemetry against real runs",
+          "summary": "Compare collected step-level telemetry against expected runner behavior and tune the collection logic.",
+          "depends_on": [
+            "PH3-T5"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        }
+      ]
+    },
+    {
+      "phase_id": "PH4",
+      "phase_name": "Training Data Pipeline",
+      "difficulty": "moderately hard",
+      "tasks": [
+        {
+          "task_id": "PH4-T1",
+          "title": "Add full-tracking data collection mode",
+          "summary": "Temporarily enable tracking for all steps so the system can collect labeled examples.",
+          "depends_on": [
+            "PH3-T5"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH4-T2",
+          "title": "Build training-data extractor",
+          "summary": "Convert watcher outputs into training records such as step text and measured CPU, RAM, and storage deltas.",
+          "depends_on": [
+            "PH4-T1"
+          ],
+          "priority": "high",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH4-T3",
+          "title": "Add prediction-versus-actual evaluation reporting",
+          "summary": "Measure how well heuristic predictions match collected telemetry from real runs.",
+          "depends_on": [
+            "PH2-T3",
+            "PH4-T2"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH4-T4",
+          "title": "Build synthetic data generator",
+          "summary": "Generate synthetic CI command samples with approximate labels to supplement real data.",
+          "depends_on": [],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH4-T5",
+          "title": "Optionally add public workflow scraper",
+          "summary": "Collect public workflow structures for broader coverage and tokenization input.",
+          "depends_on": [],
+          "priority": "low",
+          "completed_task": false
+        }
+      ]
+    },
+    {
+      "phase_id": "PH5",
+      "phase_name": "ML Model Work",
+      "difficulty": "hard",
+      "tasks": [
+        {
+          "task_id": "PH5-T1",
+          "title": "Train a tokenizer on CI command text",
+          "summary": "Build a compact tokenizer vocabulary tailored to CI command patterns.",
+          "depends_on": [
+            "PH4-T2",
+            "PH4-T4"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH5-T2",
+          "title": "Define the 1D-CNN model architecture",
+          "summary": "Create the small hotspot prediction model inspired by the lightweight Magika philosophy.",
+          "depends_on": [
+            "PH5-T1"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH5-T3",
+          "title": "Build the training loop",
+          "summary": "Train the model using mixed real and synthetic data with regression outputs for CPU, RAM, and storage scores.",
+          "depends_on": [
+            "PH5-T2",
+            "PH4-T2",
+            "PH4-T4"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH5-T4",
+          "title": "Calibrate hotspot thresholds",
+          "summary": "Tune classification thresholds so hotspot predictions balance precision and recall well enough for CI usage.",
+          "depends_on": [
+            "PH5-T3"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH5-T5",
+          "title": "Quantize the model and export to ONNX",
+          "summary": "Shrink the trained model and package it for fast CPU-only inference.",
+          "depends_on": [
+            "PH5-T3"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH5-T6",
+          "title": "Build the ONNX inference wrapper",
+          "summary": "Load the exported model, tokenize step inputs, run inference, and expose predictions to the watcher.",
+          "depends_on": [
+            "PH5-T5",
+            "PH5-T4"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH5-T7",
+          "title": "Add hybrid scoring with rules fallback",
+          "summary": "Use AI predictions when confident and fall back to rules when the model is unavailable or uncertain.",
+          "depends_on": [
+            "PH5-T6",
+            "PH1-T3"
+          ],
+          "priority": "high",
+          "completed_task": false
+        }
+      ]
+    },
+    {
+      "phase_id": "PH6",
+      "phase_name": "Productization and Adoption",
+      "difficulty": "very hard",
+      "tasks": [
+        {
+          "task_id": "PH6-T1",
+          "title": "Package the tool for one-command adoption",
+          "summary": "Create an installable or easy-to-bootstrap distribution flow for new repositories.",
+          "depends_on": [
+            "PH5-T7"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH6-T2",
+          "title": "Add Docker packaging for CI integration",
+          "summary": "Ship the scanner and runtime in a minimal container image for repeatable CI usage.",
+          "depends_on": [
+            "PH6-T1"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH6-T3",
+          "title": "Add GitLab CI support",
+          "summary": "Support another CI syntax and structure while reusing the hotspot prediction pipeline.",
+          "depends_on": [
+            "PH1-T2",
+            "PH6-T1"
+          ],
+          "priority": "low",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH6-T4",
+          "title": "Add override support for generated manifests",
+          "summary": "Allow repos to keep generated tracking defaults but layer human exceptions on top.",
+          "depends_on": [
+            "PH1-T6",
+            "PH6-T1"
+          ],
+          "priority": "high",
+          "completed_task": false
+        }
+      ]
+    },
+    {
+      "phase_id": "PH7",
+      "phase_name": "Continuous Learning Loop",
+      "difficulty": "hardest",
+      "tasks": [
+        {
+          "task_id": "PH7-T1",
+          "title": "Build telemetry feedback collection",
+          "summary": "Append step text and measured outcomes from real CI runs into a reusable training dataset.",
+          "depends_on": [
+            "PH4-T2",
+            "PH5-T7"
+          ],
+          "priority": "medium",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH7-T2",
+          "title": "Add automated retraining",
+          "summary": "Periodically retrain the model on accumulated telemetry and validate before updating the deployed model.",
+          "depends_on": [
+            "PH7-T1"
+          ],
+          "priority": "low",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH7-T3",
+          "title": "Add model versioning and promotion logic",
+          "summary": "Keep multiple model versions, compare them, and promote better-performing models safely.",
+          "depends_on": [
+            "PH7-T2"
+          ],
+          "priority": "low",
+          "completed_task": false
+        },
+        {
+          "task_id": "PH7-T4",
+          "title": "Add A/B comparison of models on real workflows",
+          "summary": "Evaluate competing model versions against live workflow behavior before rolling them out broadly.",
+          "depends_on": [
+            "PH7-T3"
+          ],
+          "priority": "low",
+          "completed_task": false
+        }
+      ]
+    }
+  ]
+}

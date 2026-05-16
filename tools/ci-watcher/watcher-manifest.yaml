@@ -1,0 +1,406 @@
+manifest_version: 1
+inventory:
+  workflow: .github/workflows/CI.yml
+  workflow_sha256: 777373ca690194e900424914bc5b5b2f7c0fc6cbc6a13a8dabbcc7627fe964aa
+defaults:
+  job_tracking: true
+  step_tracking: false
+  metrics:
+    storage: true
+    docker: true
+    cpu: false
+    memory: false
+    inode: false
+jobs:
+- job_id: disk-check
+  job_name: Disk Usage Preflight
+  track: true
+  metrics: {}
+  steps:
+  - name: Checkout repository
+    track: false
+    metrics: {}
+  - name: Check Docker disk usage
+    track: false
+    metrics: {}
+  - name: Collect oldest preview dirs
+    track: false
+    metrics: {}
+  - name: Send Slack alert
+    track: false
+    metrics: {}
+  - name: Fail pipeline if disk is full
+    track: false
+    metrics: {}
+  - name: Start CI stats watcher
+    track: false
+    metrics: {}
+- job_id: build
+  job_name: Build
+  track: true
+  metrics: {}
+  steps:
+  - name: Fix workspace file ownership
+    track: false
+    metrics: {}
+  - name: Checkout repository
+    track: false
+    metrics: {}
+  - name: Detect changes (PR-safe)
+    track: false
+    metrics: {}
+  - name: Log in to Docker registry
+    track: false
+    metrics: {}
+  - name: Set PR/SHA env
+    track: false
+    metrics: {}
+  - name: Build and push API image
+    track: true
+    metrics:
+      storage: true
+      docker: true
+  - name: Build and push UI image
+    track: false
+    metrics: {}
+  - name: Build and push Workers image
+    track: false
+    metrics: {}
+  - name: Build and push OHIF image
+    track: false
+    metrics: {}
+- job_id: lint-api
+  job_name: Lint API
+  track: true
+  metrics: {}
+  steps:
+  - name: Fix workspace file ownership
+    track: false
+    metrics: {}
+  - name: Checkout repository
+    track: false
+    metrics: {}
+  - name: Log in to Docker registry
+    track: false
+    metrics: {}
+  - name: Run API lint in container
+    track: false
+    metrics: {}
+- job_id: lint-ui
+  job_name: Lint UI
+  track: true
+  metrics: {}
+  steps:
+  - name: Fix workspace file ownership
+    track: false
+    metrics: {}
+  - name: Checkout repository
+    track: false
+    metrics: {}
+  - name: Log in to Docker registry
+    track: false
+    metrics: {}
+  - name: Run UI lint in container
+    track: false
+    metrics: {}
+- job_id: lint-workers
+  job_name: Lint Workers
+  track: true
+  metrics: {}
+  steps:
+  - name: Fix workspace file ownership
+    track: false
+    metrics: {}
+  - name: Checkout repository
+    track: false
+    metrics: {}
+  - name: Log in to Docker registry
+    track: false
+    metrics: {}
+  - name: Pull workers image
+    track: false
+    metrics: {}
+  - name: Dummy workers lint
+    track: false
+    metrics: {}
+- job_id: test
+  job_name: Test
+  track: true
+  metrics: {}
+  steps:
+  - name: Fix workspace file ownership
+    track: false
+    metrics: {}
+  - name: Checkout repository
+    track: false
+    metrics: {}
+  - name: Set worker Docker build UID/GID env
+    track: false
+    metrics: {}
+  - name: Log in to Docker registry
+    track: false
+    metrics: {}
+  - name: Create required .env files for CI
+    track: false
+    metrics: {}
+  - name: Create e2e seed user files for API seeding
+    track: false
+    metrics: {}
+  - name: Log e2e seed user files (host workspace)
+    track: false
+    metrics: {}
+  - name: Validate .env files were created correctly
+    track: false
+    metrics: {}
+  - name: Create UI cert override for CI
+    track: false
+    metrics: {}
+  - name: Copy HSI binaries into workers build context for E2E
+    track: false
+    metrics: {}
+  - name: Bring up E2E environment
+    track: true
+    metrics: {}
+  - name: Wait for Postgres to accept connections
+    track: true
+    metrics: {}
+  - name: Wait for API to be healthy
+    track: true
+    metrics: {}
+  - name: Wait for Celery worker container to be running
+    track: false
+    metrics: {}
+  - name: Ensure standalone watch service is not running
+    track: false
+    metrics: {}
+  - name: Verify API is running in CI mode (NODE_ENV=ci)
+    track: false
+    metrics: {}
+  - name: Log e2e seed user files from API container
+    track: false
+    metrics: {}
+  - name: Initialize users from JSON in CI mode
+    track: false
+    metrics: {}
+  - name: Wait for UI to respond
+    track: true
+    metrics: {}
+  - name: "Verify service connectivity (API \u2192 deps)"
+    track: false
+    metrics: {}
+  - name: Verify E2E users exist with correct roles
+    track: false
+    metrics: {}
+  - name: Show container status before tests
+    track: false
+    metrics: {}
+  - name: Mark E2E phase start time for API log slicing
+    track: false
+    metrics: {}
+  - name: Run E2E login setup tests only (temporary CI gate)
+    track: true
+    metrics:
+      storage: true
+      docker: true
+  - name: Run workers test suite
+    track: false
+    metrics: {}
+  - name: Collect watch test logs
+    track: false
+    metrics: {}
+  - name: Collect API logs from E2E phase window
+    track: false
+    metrics: {}
+  - name: Upload API logs for E2E phase
+    track: false
+    metrics: {}
+  - name: Collect workflow routing diagnostics
+    track: false
+    metrics: {}
+  - name: Upload workflow routing diagnostics
+    track: false
+    metrics: {}
+  - name: Re-verify e2e seed users after tests
+    track: false
+    metrics: {}
+  - name: Dump container status on failure
+    track: false
+    metrics: {}
+  - name: Print short API log tail on failure
+    track: false
+    metrics: {}
+  - name: Dump API env and config on failure
+    track: false
+    metrics: {}
+  - name: Dump per-service logs on failure
+    track: false
+    metrics: {}
+  - name: Upload per-service logs
+    track: false
+    metrics: {}
+  - name: Upload watch test logs
+    track: false
+    metrics: {}
+  - name: Collect E2E Docker logs for debugging
+    track: false
+    metrics: {}
+  - name: Upload E2E Docker debug bundle
+    track: false
+    metrics: {}
+  - name: Collect Playwright HTML report
+    track: false
+    metrics: {}
+  - name: Publish Playwright report to runner-hosted folder
+    track: false
+    metrics: {}
+  - name: Upload Playwright report
+    track: false
+    metrics: {}
+  - name: Tear down E2E environment
+    track: true
+    metrics: {}
+  - name: Fix workspace file ownership
+    track: false
+    metrics: {}
+- job_id: tag-pr
+  job_name: Tag PR images
+  track: true
+  metrics: {}
+  steps:
+  - name: Log in to Docker registry
+    track: false
+    metrics: {}
+  - name: Tag/push PR images
+    track: false
+    metrics: {}
+- job_id: preview-up
+  job_name: PR Preview Up
+  track: true
+  metrics: {}
+  steps:
+  - name: Fix workspace file ownership
+    track: false
+    metrics: {}
+  - name: Checkout repository (isolated per PR)
+    track: false
+    metrics: {}
+  - name: Compute PR vars & choose preview slot
+    track: false
+    metrics: {}
+  - name: Teardown selected preview slot before reuse
+    track: false
+    metrics: {}
+  - name: Sync code into isolated preview dir
+    track: true
+    metrics: {}
+  - name: Verify preview workspace exists
+    track: false
+    metrics: {}
+  - name: Export preview env (incl. per-service tags)
+    track: false
+    metrics: {}
+  - name: Ensure required .env files exist
+    track: false
+    metrics: {}
+  - name: Create admins.json from secret (base64)
+    track: false
+    metrics: {}
+  - name: Verify admins.json exists
+    track: false
+    metrics: {}
+  - name: Launch preview stack (compose-preview only)
+    track: true
+    metrics:
+      storage: true
+      docker: true
+  - name: Wait for signet_db to be healthy
+    track: false
+    metrics: {}
+  - name: Wait for signet & rhythm to be healthy
+    track: false
+    metrics: {}
+  - name: Wait for API to be healthy
+    track: false
+    metrics: {}
+  - name: Wait for Postgres to accept connections
+    track: false
+    metrics: {}
+  - name: Wait for RabbitMQ (queue) to be up
+    track: false
+    metrics: {}
+  - name: Wait for MongoDB to be up
+    track: false
+    metrics: {}
+  - name: "API\u2192deps health from inside API"
+    track: false
+    metrics: {}
+  - name: "UI env + UI\u2192API health (inside UI)"
+    track: false
+    metrics: {}
+  - name: Wait for UI container to be healthy
+    track: false
+    metrics: {}
+  - name: Wait for UI respond on host port
+    track: false
+    metrics: {}
+  - name: Verify OHIF is reachable through preview proxy
+    track: false
+    metrics: {}
+  - name: Ensure init_data_dirs completed successfully
+    track: false
+    metrics: {}
+  - name: Check workers (optional Up state)
+    track: false
+    metrics: {}
+  - name: Wait for secure_download to be healthy (if present)
+    track: false
+    metrics: {}
+  - name: Load preview seed data (if present)
+    track: false
+    metrics: {}
+  - name: Restore preview DICOM fixture bundle (if present)
+    track: false
+    metrics: {}
+  - name: Record active preview slot metadata
+    track: false
+    metrics: {}
+  - name: Post preview link to PR
+    track: false
+    metrics: {}
+  - name: Dump preview-up logs on failure
+    track: false
+    metrics: {}
+  - name: Upload preview-up logs
+    track: false
+    metrics: {}
+  - name: Teardown current preview slot on failure/cancel
+    track: false
+    metrics: {}
+- job_id: cleanup
+  job_name: CI Cleanup
+  track: true
+  metrics: {}
+  steps:
+  - name: Checkout
+    track: false
+    metrics: {}
+  - name: Cleanup
+    track: false
+    metrics: {}
+  - name: Generate final CI stats report
+    track: true
+    metrics:
+      storage: true
+      docker: true
+  - name: Stop watcher and server
+    track: false
+    metrics: {}
+  - name: Upload CI stats artifact
+    track: false
+    metrics: {}
+  - name: Comment CI Stats links on PR
+    track: false
+    metrics: {}
+  - name: Prune stats older than 30 days
+    track: false
+    metrics: {}

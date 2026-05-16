@@ -1,0 +1,90 @@
+{
+  "artifact_version": "v1",
+  "schema_version": "v1",
+  "description": "Shared data contract for current CI stats artifacts and a future live page.",
+  "snapshot_fields": [
+    "tick",
+    "ts",
+    "stage",
+    "fs",
+    "docker_df",
+    "images",
+    "containers"
+  ],
+  "timeline_fields": [
+    "tick",
+    "ts",
+    "stage",
+    "fs",
+    "docker_df",
+    "images",
+    "containers"
+  ],
+  "step_summary_fields": [
+    "step_name",
+    "job_name",
+    "command_executed",
+    "start_time",
+    "end_time",
+    "duration_seconds",
+    "status",
+    "exit_code",
+    "fs_before",
+    "fs_after",
+    "docker_df_before",
+    "docker_df_after",
+    "container_count_before",
+    "container_count_after",
+    "image_count_before",
+    "image_count_after",
+    "volume_count_before",
+    "volume_count_after",
+    "delta_summary"
+  ],
+  "nested_fields": {
+    "fs_entry_fields": [
+      "mount",
+      "size_kb",
+      "used_kb",
+      "avail_kb",
+      "pct"
+    ],
+    "docker_df_fields": [
+      "images_total",
+      "images_reclaimable",
+      "containers_total",
+      "containers_reclaimable",
+      "volumes_total",
+      "volumes_reclaimable",
+      "build_cache_total",
+      "build_cache_reclaimable"
+    ],
+    "image_entry_fields": [
+      "repo",
+      "tag",
+      "size"
+    ],
+    "container_entry_fields": [
+      "name",
+      "cpu_pct",
+      "mem_usage",
+      "mem_limit",
+      "mem_pct",
+      "image",
+      "status"
+    ],
+    "step_delta_summary_fields": [
+      "root_pct_delta",
+      "var_pct_delta",
+      "opt_sca_pct_delta",
+      "container_delta",
+      "image_delta",
+      "volume_delta"
+    ]
+  },
+  "live_endpoints": {
+    "snapshot": "./snapshot.json",
+    "timeline": "./timeline.ndjson",
+    "schema": "./live-schema.json"
+  }
+}

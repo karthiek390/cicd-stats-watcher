@@ -1,0 +1,152 @@
+schema_version: 1
+workflow: .github/workflows/CI.yml
+workflow_sha256: 777373ca690194e900424914bc5b5b2f7c0fc6cbc6a13a8dabbcc7627fe964aa
+job_count: 9
+jobs:
+- job_id: disk-check
+  job_name: Disk Usage Preflight
+  steps:
+  - name: Checkout repository
+  - name: Check Docker disk usage
+    id: check
+  - name: Collect oldest preview dirs
+    id: previews
+  - name: Send Slack alert
+  - name: Fail pipeline if disk is full
+  - name: Start CI stats watcher
+- job_id: build
+  job_name: Build
+  steps:
+  - name: Fix workspace file ownership
+  - name: Checkout repository
+  - name: Detect changes (PR-safe)
+    id: changed
+  - name: Log in to Docker registry
+  - name: Set PR/SHA env
+  - name: Build and push API image
+  - name: Build and push UI image
+  - name: Build and push Workers image
+  - name: Build and push OHIF image
+- job_id: lint-api
+  job_name: Lint API
+  steps:
+  - name: Fix workspace file ownership
+  - name: Checkout repository
+  - name: Log in to Docker registry
+  - name: Run API lint in container
+- job_id: lint-ui
+  job_name: Lint UI
+  steps:
+  - name: Fix workspace file ownership
+  - name: Checkout repository
+  - name: Log in to Docker registry
+  - name: Run UI lint in container
+- job_id: lint-workers
+  job_name: Lint Workers
+  steps:
+  - name: Fix workspace file ownership
+  - name: Checkout repository
+  - name: Log in to Docker registry
+  - name: Pull workers image
+  - name: Dummy workers lint
+- job_id: test
+  job_name: Test
+  steps:
+  - name: Fix workspace file ownership
+  - name: Checkout repository
+  - name: Set worker Docker build UID/GID env
+  - name: Log in to Docker registry
+  - name: Create required .env files for CI
+  - name: Create e2e seed user files for API seeding
+  - name: Log e2e seed user files (host workspace)
+  - name: Validate .env files were created correctly
+  - name: Create UI cert override for CI
+  - name: Copy HSI binaries into workers build context for E2E
+  - name: Bring up E2E environment
+  - name: Wait for Postgres to accept connections
+  - name: Wait for API to be healthy
+  - name: Wait for Celery worker container to be running
+  - name: Ensure standalone watch service is not running
+  - name: Verify API is running in CI mode (NODE_ENV=ci)
+  - name: Log e2e seed user files from API container
+  - name: Initialize users from JSON in CI mode
+  - name: Wait for UI to respond
+  - name: "Verify service connectivity (API \u2192 deps)"
+  - name: Verify E2E users exist with correct roles
+  - name: Show container status before tests
+  - name: Mark E2E phase start time for API log slicing
+  - name: Run E2E login setup tests only (temporary CI gate)
+  - name: Run workers test suite
+  - name: Collect watch test logs
+  - name: Collect API logs from E2E phase window
+  - name: Upload API logs for E2E phase
+  - name: Collect workflow routing diagnostics
+  - name: Upload workflow routing diagnostics
+  - name: Re-verify e2e seed users after tests
+  - name: Dump container status on failure
+  - name: Print short API log tail on failure
+  - name: Dump API env and config on failure
+  - name: Dump per-service logs on failure
+  - name: Upload per-service logs
+  - name: Upload watch test logs
+  - name: Collect E2E Docker logs for debugging
+  - name: Upload E2E Docker debug bundle
+  - name: Collect Playwright HTML report
+  - name: Publish Playwright report to runner-hosted folder
+    id: publish-playwright
+  - name: Upload Playwright report
+  - name: Tear down E2E environment
+  - name: Fix workspace file ownership
+- job_id: tag-pr
+  job_name: Tag PR images
+  steps:
+  - name: Log in to Docker registry
+  - name: Tag/push PR images
+- job_id: preview-up
+  job_name: PR Preview Up
+  steps:
+  - name: Fix workspace file ownership
+  - name: Checkout repository (isolated per PR)
+  - name: Compute PR vars & choose preview slot
+    id: v
+  - name: Teardown selected preview slot before reuse
+  - name: Sync code into isolated preview dir
+  - name: Verify preview workspace exists
+  - name: Export preview env (incl. per-service tags)
+  - name: Ensure required .env files exist
+  - name: Create admins.json from secret (base64)
+  - name: Verify admins.json exists
+  - name: Launch preview stack (compose-preview only)
+  - name: Wait for signet_db to be healthy
+  - name: Wait for signet & rhythm to be healthy
+  - name: Wait for API to be healthy
+  - name: Wait for Postgres to accept connections
+  - name: Wait for RabbitMQ (queue) to be up
+  - name: Wait for MongoDB to be up
+  - name: "API\u2192deps health from inside API"
+  - name: "UI env + UI\u2192API health (inside UI)"
+  - name: Wait for UI container to be healthy
+  - name: Wait for UI respond on host port
+  - name: Verify OHIF is reachable through preview proxy
+  - name: Ensure init_data_dirs completed successfully
+  - name: Check workers (optional Up state)
+  - name: Wait for secure_download to be healthy (if present)
+  - name: Load preview seed data (if present)
+  - name: Restore preview DICOM fixture bundle (if present)
+  - name: Record active preview slot metadata
+  - name: Post preview link to PR
+  - name: Dump preview-up logs on failure
+  - name: Upload preview-up logs
+  - name: Teardown current preview slot on failure/cancel
+- job_id: cleanup
+  job_name: CI Cleanup
+  steps:
+  - name: Checkout
+  - name: Cleanup
+  - name: Generate final CI stats report
+    id: gen-stats
+  - name: Stop watcher and server
+  - name: Upload CI stats artifact
+    id: upload-stats
+  - name: Comment CI Stats links on PR
+  - name: Prune stats older than 30 days

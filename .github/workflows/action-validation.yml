@@ -1,0 +1,282 @@
+name: Action Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "action.yml"
+      - "action/**"
+      - "tools/ci-watcher/**"
+      - ".github/workflows/action-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "action.yml"
+      - "action/**"
+      - "tools/ci-watcher/**"
+      - ".github/workflows/action-validation.yml"
+
+jobs:
+  validate-metadata:
+    name: Validate Action Metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify action metadata and bundled files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+
+          try:
+              import yaml
+          except Exception as exc:
+              raise SystemExit(f"PyYAML unavailable: {exc}")
+
+          root = Path(".")
+          action_file = root / "action.yml"
+          if not action_file.exists():
+              raise SystemExit("action.yml is missing")
+
+          data = yaml.safe_load(action_file.read_text(encoding="utf-8"))
+          required_inputs = {
+              "mode",
+              "job-id",
+              "step-name",
+              "stats-dir",
+              "metrics",
+              "command",
+              "working-directory",
+              "manifest-path",
+          }
+          required_outputs = {
+              "mode",
+              "resolved-stats-dir",
+              "report-path",
+              "artifact-path",
+              "exit-code",
+              "finalized",
+              "generated-report",
+          }
+
+          actual_inputs = set((data or {}).get("inputs", {}).keys())
+          actual_outputs = set((data or {}).get("outputs", {}).keys())
+
+          missing_inputs = sorted(required_inputs - actual_inputs)
+          missing_outputs = sorted(required_outputs - actual_outputs)
+          if missing_inputs:
+              raise SystemExit(f"Missing required action inputs: {missing_inputs}")
+          if missing_outputs:
+              raise SystemExit(f"Missing required action outputs: {missing_outputs}")
+
+          required_files = [
+              "action/dispatch.sh",
+              "action/mode_start.sh",
+              "action/mode_track.sh",
+              "action/mode_finalize.sh",
+              "tools/ci-watcher/watcher.sh",
+              "tools/ci-watcher/mark_step.sh",
+              "tools/ci-watcher/run_tracked_step.sh",
+              "tools/ci-watcher/generate_report.py",
+              "tools/ci-watcher/watcher-manifest.yaml",
+          ]
+          missing_files = [path for path in required_files if not (root / path).exists()]
+          if missing_files:
+              raise SystemExit(f"Missing bundled runtime files: {missing_files}")
+
+          print("Action metadata and bundled runtime files look valid.")
+          PY
+
+  validate-success-path:
+    name: Validate Success Path
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start watcher
+        id: start
+        uses: ./
+        with:
+          mode: start
+          stats-dir: /tmp/cicd-stats-success
+
+      - name: Track storage-only step
+        id: track-storage
+        uses: ./
+        with:
+          mode: track
+          stats-dir: /tmp/cicd-stats-success
+          job-id: fixture-build
+          step-name: Write fixture output
+          metrics: storage
+          command: |
+            mkdir -p /tmp/cicd-stats-success/work
+            echo "hello" > /tmp/cicd-stats-success/work/output.txt
+
+      - name: Track richer step
+        id: track-rich
+        uses: ./
+        with:
+          mode: track
+          stats-dir: /tmp/cicd-stats-success
+          job-id: fixture-build
+          step-name: Run fixture workload
+          metrics: storage,docker,cpu,memory,inode
+          command: |
+            mkdir -p /tmp/cicd-stats-success/work
+            dd if=/dev/zero of=/tmp/cicd-stats-success/work/blob.bin bs=1024 count=64 status=none
+
+      - name: Finalize watcher
+        id: finalize
+        if: always()
+        uses: ./
+        with:
+          mode: finalize
+          stats-dir: /tmp/cicd-stats-success
+
+      - name: Assert expected artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f /tmp/cicd-stats-success/meta.json
+          test -f /tmp/cicd-stats-success/report.html
+          test -f /tmp/cicd-stats-success/step-summaries.json
+          test -f /tmp/cicd-stats-success/watcher-runtime-state.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          stats_dir = Path("/tmp/cicd-stats-success")
+          steps = json.loads((stats_dir / "step-summaries.json").read_text(encoding="utf-8"))
+          if len(steps) < 2:
+              raise SystemExit("Expected at least 2 tracked step summaries")
+
+          by_name = {step["step_name"]: step for step in steps}
+          storage_step = by_name["Write fixture output"]
+          rich_step = by_name["Run fixture workload"]
+
+          assert storage_step["status"] == "success"
+          assert rich_step["status"] == "success"
+          assert storage_step["metrics_enabled"]["storage"] is True
+          assert storage_step["metrics_enabled"]["docker"] is False
+          assert rich_step["metrics_enabled"]["cpu"] is True
+          assert rich_step["metrics_enabled"]["memory"] is True
+          assert rich_step["metrics_enabled"]["inode"] is True
+          print("Success-path artifacts and metric selections validated.")
+          PY
+
+      - name: Upload success artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: action-validation-success
+          path: /tmp/cicd-stats-success
+
+  validate-failure-path:
+    name: Validate Failure Path
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start watcher
+        id: start
+        uses: ./
+        with:
+          mode: start
+          stats-dir: /tmp/cicd-stats-failure
+
+      - name: Run failing tracked step
+        id: failing-step
+        continue-on-error: true
+        uses: ./
+        with:
+          mode: track
+          stats-dir: /tmp/cicd-stats-failure
+          job-id: fixture-failure
+          step-name: Simulate failing command
+          metrics: storage,docker
+          command: |
+            echo "this step fails on purpose"
+            exit 7
+
+      - name: Finalize watcher
+        id: finalize
+        if: always()
+        uses: ./
+        with:
+          mode: finalize
+          stats-dir: /tmp/cicd-stats-failure
+
+      - name: Assert failure-safe behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f /tmp/cicd-stats-failure/report.html
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          stats_dir = Path("/tmp/cicd-stats-failure")
+          steps = json.loads((stats_dir / "step-summaries.json").read_text(encoding="utf-8"))
+          if len(steps) != 1:
+              raise SystemExit(f"Expected exactly 1 tracked failure step, got {len(steps)}")
+
+          step = steps[0]
+          assert step["step_name"] == "Simulate failing command"
+          assert step["status"] == "failed"
+          assert int(step["exit_code"]) == 7
+          print("Failure-path step summary validated.")
+          PY
+
+      - name: Upload failure artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: action-validation-failure
+          path: /tmp/cicd-stats-failure
+
+  validate-default-inputs:
+    name: Validate Defaults And Optional Inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start watcher with defaults
+        id: start
+        uses: ./
+        with:
+          mode: start
+
+      - name: Track step with defaults
+        id: track
+        uses: ./
+        with:
+          mode: track
+          job-id: defaults-job
+          step-name: Defaulted tracked step
+          command: |
+            echo "default input validation"
+
+      - name: Finalize watcher with defaults
+        id: finalize
+        if: always()
+        uses: ./
+        with:
+          mode: finalize
+
+      - name: Assert defaults worked
+        shell: bash
+        run: |
+          set -euo pipefail
+          stats_dir="${{ steps.finalize.outputs.artifact-path }}"
+          test -n "$stats_dir"
+          test -f "$stats_dir/report.html"
+          test -f "$stats_dir/meta.json"

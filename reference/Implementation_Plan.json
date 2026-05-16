@@ -1,0 +1,630 @@
+{
+  "project": "CI Stats Report Enhancements",
+  "goal": "Expand the downloadable CI stats artifact into a detailed forensic report before building the live view.",
+  "phases": [
+    {
+      "phase": "Phase 1 - Step-Level Attribution",
+      "priority": "high",
+      "tasks": [
+        {
+          "id": "P1-T1",
+          "title": "Add structured step start/end capture",
+          "status": "completed",
+          "description": "Capture before/after snapshots for every important CI step so each step has its own delta summary.",
+          "deliverables": [
+            "step-summaries.json",
+            "step-events.ndjson"
+          ],
+          "fields_to_store": [
+            "job_name",
+            "step_name",
+            "step_id",
+            "start_time",
+            "end_time",
+            "duration_seconds",
+            "status",
+            "fs_before",
+            "fs_after",
+            "docker_df_before",
+            "docker_df_after",
+            "container_count_before",
+            "container_count_after",
+            "image_count_before",
+            "image_count_after",
+            "volume_count_before",
+            "volume_count_after",
+            "build_cache_before",
+            "build_cache_after",
+            "delta_summary"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P1-T2",
+          "title": "Create generic CI step wrapper",
+          "status": "completed",
+          "description": "Build a reusable wrapper/helper so future workflow steps automatically emit start/end records without manual custom code for each new step.",
+          "deliverables": [
+            "tools/ci-watcher/run_step.sh",
+            "tools/ci-watcher/mark_step.sh"
+          ],
+          "fields_to_store": [
+            "step_name",
+            "job_name",
+            "command_executed",
+            "start_time",
+            "end_time",
+            "exit_code"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P1-T3",
+          "title": "Show per-step deltas in report.html",
+          "status": "completed",
+          "description": "Add a section in the downloadable report that explains exactly what each CI step increased or cleaned.",
+          "deliverables": [
+            "report.html step delta section"
+          ],
+          "fields_to_store": [
+            "step_name",
+            "duration_seconds",
+            "fs_delta",
+            "docker_delta",
+            "container_delta",
+            "image_delta",
+            "volume_delta",
+            "cache_delta"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Missing Workflow Coverage",
+      "priority": "high",
+      "tasks": [
+        {
+          "id": "P2-T1",
+          "title": "Capture Tag PR images stage",
+          "status": "completed",
+          "description": "Record when retagging starts and finishes, and store which source images were retagged to which PR tags.",
+          "deliverables": [
+            "tag-pr-summary.json"
+          ],
+          "fields_to_store": [
+            "service",
+            "source_tag",
+            "destination_tag",
+            "tag_start_time",
+            "tag_end_time",
+            "duration_seconds"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P2-T2",
+          "title": "Capture PR Preview Up stage in detail",
+          "status": "completed",
+          "description": "Track preview directory creation, compose pull/up, health waits, seed load, and final preview footprint.",
+          "deliverables": [
+            "preview-up-summary.json"
+          ],
+          "fields_to_store": [
+            "preview_dir",
+            "preview_dir_size_before",
+            "preview_dir_size_after",
+            "compose_pull_start",
+            "compose_pull_end",
+            "compose_up_start",
+            "compose_up_end",
+            "services_started",
+            "health_waits",
+            "seed_load_status",
+            "preview_final_container_count",
+            "preview_final_volume_count"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P2-T3",
+          "title": "Capture CI Cleanup stage in detail",
+          "status": "completed",
+          "description": "Record exactly what cleanup removed and how much storage was reclaimed.",
+          "deliverables": [
+            "cleanup-summary.json"
+          ],
+          "fields_to_store": [
+            "cleanup_start_time",
+            "cleanup_end_time",
+            "docker_prune_ran",
+            "images_removed_count",
+            "containers_removed_count",
+            "volumes_removed_count",
+            "build_cache_reclaimed",
+            "preview_dirs_removed",
+            "stats_dirs_removed",
+            "fs_before",
+            "fs_after",
+            "docker_df_before",
+            "docker_df_after",
+            "estimated_reclaimed_space"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P2-T4",
+          "title": "Capture failure-only diagnostic stages",
+          "status": "completed",
+          "description": "If failures happen, record extra logs/artifacts/cleanup actions so diagnostics can be analyzed later.",
+          "deliverables": [
+            "failure-diagnostics-summary.json"
+          ],
+          "fields_to_store": [
+            "failure_stage",
+            "artifacts_generated",
+            "logs_collected",
+            "extra_disk_growth_detected",
+            "fallback_cleanup_used"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Docker Object Inventories",
+      "priority": "high",
+      "tasks": [
+        {
+          "id": "P3-T1",
+          "title": "Store detailed Docker image inventory",
+          "status": "completed",
+          "description": "Capture exact image repository, tag, size, and created time at important boundaries.",
+          "deliverables": [
+            "docker-images.json"
+          ],
+          "fields_to_store": [
+            "repository",
+            "tag",
+            "image_id",
+            "digest",
+            "created_since",
+            "size",
+            "belongs_to_current_pr",
+            "belongs_to_current_sha"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P3-T2",
+          "title": "Store detailed Docker volume inventory",
+          "status": "completed",
+          "description": "Track all Docker volumes before/after steps to identify leftover or newly created volumes.",
+          "deliverables": [
+            "docker-volumes.json"
+          ],
+          "fields_to_store": [
+            "volume_name",
+            "driver",
+            "mountpoint",
+            "labels",
+            "belongs_to_preview_stack"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P3-T3",
+          "title": "Store detailed container inventory",
+          "status": "completed",
+          "description": "Capture both running and stopped containers with size and ownership context.",
+          "deliverables": [
+            "docker-containers.json"
+          ],
+          "fields_to_store": [
+            "container_name",
+            "container_id",
+            "image",
+            "status",
+            "size",
+            "created_at",
+            "belongs_to_preview_stack",
+            "belongs_to_test_stack"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P3-T4",
+          "title": "Capture build cache details",
+          "status": "completed",
+          "description": "Collect build cache information to analyze how much storage Docker build layers consume.",
+          "deliverables": [
+            "docker-build-cache.json"
+          ],
+          "fields_to_store": [
+            "cache_total",
+            "cache_reclaimable",
+            "cache_entries",
+            "builder_backend"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P3-T5",
+          "title": "Track dangling Docker objects",
+          "status": "completed",
+          "description": "Measure dangling images, volumes, and stopped containers so cleanup effectiveness can be proven.",
+          "deliverables": [
+            "docker-dangling-summary.json"
+          ],
+          "fields_to_store": [
+            "dangling_images_count",
+            "dangling_images_size",
+            "dangling_volumes_count",
+            "stopped_containers_count",
+            "stopped_containers_size"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Runner and Directory Footprint",
+      "priority": "high",
+      "tasks": [
+        {
+          "id": "P4-T1",
+          "title": "Track directory sizes for important runner paths",
+          "status": "completed",
+          "description": "Measure key directories directly to understand where storage growth is happening beyond Docker summaries.",
+          "deliverables": [
+            "directory-sizes.ndjson"
+          ],
+          "fields_to_store": [
+            "timestamp",
+            "runner_workspace_size",
+            "preview_base_dir_size",
+            "current_pr_preview_dir_size",
+            "docker_root_dir_size",
+            "var_lib_docker_size",
+            "actions_runner_work_size",
+            "ci_stats_dir_size"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P4-T2",
+          "title": "Track inode usage",
+          "status": "completed",
+          "description": "Add df -i snapshots to detect inode exhaustion issues not visible in normal disk percentages.",
+          "deliverables": [
+            "inode-usage.ndjson"
+          ],
+          "fields_to_store": [
+            "timestamp",
+            "mount",
+            "inode_total",
+            "inode_used",
+            "inode_free",
+            "inode_pct"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P4-T3",
+          "title": "Track host memory and CPU load",
+          "status": "completed",
+          "description": "Store lightweight host telemetry so storage spikes can be correlated with resource pressure.",
+          "deliverables": [
+            "host-stats.ndjson"
+          ],
+          "fields_to_store": [
+            "timestamp",
+            "memory_total",
+            "memory_used",
+            "memory_free",
+            "swap_used",
+            "load_average"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Build/Test/Preview Deep Breakdown",
+      "priority": "medium",
+      "tasks": [
+        {
+          "id": "P5-T1",
+          "title": "Split build stages into build vs push",
+          "status": "completed",
+          "description": "Separate image build duration from push duration for API, UI, and Workers.",
+          "deliverables": [
+            "build-summary.json"
+          ],
+          "fields_to_store": [
+            "service",
+            "build_start",
+            "build_end",
+            "build_duration_seconds",
+            "push_start",
+            "push_end",
+            "push_duration_seconds",
+            "final_image_size"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P5-T2",
+          "title": "Split test stage into sub-steps",
+          "status": "completed",
+          "description": "Track E2E bring-up, waits, Playwright execution, and teardown separately.",
+          "deliverables": [
+            "test-summary.json"
+          ],
+          "fields_to_store": [
+            "env_up_start",
+            "env_up_end",
+            "postgres_wait_duration",
+            "api_wait_duration",
+            "ui_wait_duration",
+            "playwright_start",
+            "playwright_end",
+            "playwright_duration",
+            "teardown_start",
+            "teardown_end",
+            "teardown_duration"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P5-T3",
+          "title": "Break preview-up into sub-steps",
+          "status": "completed",
+          "description": "Make preview-up analyzable by showing sync, pull, up, waits, and seed load separately.",
+          "deliverables": [
+            "preview-step-breakdown.json"
+          ],
+          "fields_to_store": [
+            "sync_duration",
+            "pull_duration",
+            "up_duration",
+            "api_health_wait",
+            "ui_health_wait",
+            "signet_health_wait",
+            "rhythm_health_wait",
+            "seed_load_duration"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Git and PR Context",
+      "priority": "medium",
+      "tasks": [
+        {
+          "id": "P6-T1",
+          "title": "Store PR metadata and changed files",
+          "status": "completed",
+          "description": "Save change context alongside resource stats so usage can be correlated with code areas.",
+          "deliverables": [
+            "git-context.json"
+          ],
+          "fields_to_store": [
+            "pr_number",
+            "sha",
+            "base_sha",
+            "head_sha",
+            "event_action",
+            "changed_files",
+            "changed_file_count",
+            "api_changed",
+            "ui_changed",
+            "workers_changed"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P6-T2",
+          "title": "Show changed files section in report",
+          "status": "completed",
+          "description": "Render changed files and change flags in report.html for quick context.",
+          "deliverables": [
+            "report.html git context section"
+          ],
+          "fields_to_store": [
+            "changed_files",
+            "api_changed",
+            "ui_changed",
+            "workers_changed"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - Peak Metrics and Summaries",
+      "priority": "medium",
+      "tasks": [
+        {
+          "id": "P7-T1",
+          "title": "Compute peak usage metrics",
+          "status": "completed",
+          "description": "Calculate max filesystem usage, max containers, and other peaks during the run.",
+          "deliverables": [
+            "run-summary.json"
+          ],
+          "fields_to_store": [
+            "peak_root_pct",
+            "peak_var_pct",
+            "peak_opt_sca_pct",
+            "max_container_count",
+            "max_image_count",
+            "max_volume_count",
+            "longest_step",
+            "largest_step_growth",
+            "largest_cleanup_reduction"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P7-T2",
+          "title": "Add report summary card section",
+          "status": "completed",
+          "description": "At the top of report.html, show a compact summary of peaks and biggest deltas.",
+          "deliverables": [
+            "report.html summary section"
+          ],
+          "fields_to_store": [
+            "peak_var_pct",
+            "peak_opt_sca_pct",
+            "max_container_count",
+            "longest_step",
+            "largest_growth_step",
+            "largest_cleanup_step"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 8 - Cleanup Efficiency and Warnings",
+      "priority": "medium",
+      "tasks": [
+        {
+          "id": "P8-T1",
+          "title": "Measure cleanup effectiveness",
+          "status": "completed",
+          "description": "Show exactly how much disk and Docker footprint cleanup reclaimed.",
+          "deliverables": [
+            "cleanup-effectiveness.json"
+          ],
+          "fields_to_store": [
+            "fs_delta_after_cleanup",
+            "docker_images_reclaimed",
+            "docker_cache_reclaimed",
+            "volumes_reclaimed",
+            "containers_removed",
+            "preview_dirs_deleted"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P8-T2",
+          "title": "Add anomaly and warning detection",
+          "status": "completed",
+          "description": "Flag suspicious conditions automatically in the report.",
+          "deliverables": [
+            "warnings.json"
+          ],
+          "fields_to_store": [
+            "var_usage_exceeded_threshold",
+            "cleanup_left_high_usage",
+            "too_many_old_pr_images",
+            "container_count_unexpectedly_high",
+            "preview_cleanup_incomplete",
+            "cache_growth_unusually_high"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P8-T3",
+          "title": "Render warnings in report.html",
+          "status": "completed",
+          "description": "Add a warnings section near the top of the report so potential issues are visible immediately.",
+          "deliverables": [
+            "report.html warnings section"
+          ],
+          "fields_to_store": [
+            "warnings"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 9 - Artifact Structure Improvements",
+      "priority": "medium",
+      "tasks": [
+        {
+          "id": "P9-T1",
+          "title": "Standardize artifact file layout",
+          "status": "completed",
+          "description": "Keep the artifact consistent and easy to inspect both manually and programmatically.",
+          "deliverables": [
+            "report.html",
+            "timeline.ndjson",
+            "snapshot.json",
+            "meta.json",
+            "step-summaries.json",
+            "docker-images.json",
+            "docker-volumes.json",
+            "docker-containers.json",
+            "docker-build-cache.json",
+            "git-context.json",
+            "cleanup-summary.json",
+            "run-summary.json",
+            "warnings.json"
+          ],
+          "fields_to_store": [
+            "artifact_version",
+            "schema_version"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P9-T2",
+          "title": "Add raw plus derived data separation",
+          "status": "completed",
+          "description": "Keep raw collected telemetry separate from computed summaries to simplify future analysis.",
+          "deliverables": [
+            "raw/",
+            "derived/"
+          ],
+          "fields_to_store": [
+            "raw_data_files",
+            "derived_data_files"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    },
+    {
+      "phase": "Phase 10 - Future Live View Preparation",
+      "priority": "low",
+      "tasks": [
+        {
+          "id": "P10-T1",
+          "title": "Define live data contract",
+          "status": "completed",
+          "description": "Prepare the data files and schema needed by a future live page so the downloadable and live views use the same model.",
+          "deliverables": [
+            "live-schema.json"
+          ],
+          "fields_to_store": [
+            "snapshot_fields",
+            "timeline_fields",
+            "step_summary_fields"
+          ],
+          "Completed and verified": true
+        },
+        {
+          "id": "P10-T2",
+          "title": "Prepare reverse-proxy-friendly live endpoint design",
+          "status": "completed",
+          "description": "Plan how future live PR pages will be served through standard HTTPS path routing instead of exposing a raw port directly.",
+          "deliverables": [
+            "live-serving-design.md"
+          ],
+          "fields_to_store": [
+            "proxy_path_pattern",
+            "target_local_port",
+            "pr_routing_strategy",
+            "retention_policy"
+          ],
+          "Completed and verified": true
+        }
+      ]
+    }
+  ]
+}
