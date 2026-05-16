@@ -88,6 +88,9 @@ if printf '%s' "$METRICS_JSON" | grep -q '"error"'; then
   exit 1
 fi
 
+CI_STATS_FORCE_TRACK="true"
+export CI_STATS_FORCE_TRACK
+
 echo "[cicd-stats-watcher] tracking step='$STEP_NAME' job='$JOB_ID'"
 echo "[cicd-stats-watcher] stats_dir=$RESOLVED_STATS_DIR"
 echo "[cicd-stats-watcher] metrics=$TRACKED_STEP_METRICS"

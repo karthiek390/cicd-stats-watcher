@@ -258,10 +258,14 @@ PY
 }
 
 TRACK_STEP="false"
-if TRACK_STEP=$(is_tracked_step "$MANIFEST_PATH" 2>/dev/null); then
-  :
+if [ "${CI_STATS_FORCE_TRACK:-false}" = "true" ]; then
+  TRACK_STEP="true"
 else
-  TRACK_STEP="false"
+  if TRACK_STEP=$(is_tracked_step "$MANIFEST_PATH" 2>/dev/null); then
+    :
+  else
+    TRACK_STEP="false"
+  fi
 fi
 
 TRACKED_STEP_METRICS="${TRACKED_STEP_METRICS:-}"
