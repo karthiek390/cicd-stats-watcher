@@ -268,18 +268,26 @@ json_section_or_default() {
   local snap="$1"
   local key="$2"
   local default_value="$3"
-  local match
-  match=$(echo "$snap" | grep -o "\"${key}\":\[[^]]*\]" | head -1 || true)
-  if [ -n "$match" ]; then
-    echo "$match" | sed "s/^\"${key}\"://"
-    return 0
-  fi
-  match=$(echo "$snap" | grep -o "\"${key}\":{[^}]*}" | head -1 || true)
-  if [ -n "$match" ]; then
-    echo "$match" | sed "s/^\"${key}\"://"
-    return 0
-  fi
-  printf '%s\n' "$default_value"
+  python3 - "$snap" "$key" "$default_value" <<'PY'
+import json
+import sys
+
+snap = sys.argv[1]
+key = sys.argv[2]
+default_raw = sys.argv[3]
+
+try:
+    payload = json.loads(snap)
+except Exception:
+    print(default_raw)
+    raise SystemExit(0)
+
+if key not in payload:
+    print(default_raw)
+    raise SystemExit(0)
+
+print(json.dumps(payload[key], separators=(",", ":")))
+PY
 }
 
 # ── begin ─────────────────────────────────────────────────────────────────────
