@@ -163,6 +163,35 @@ The current action is designed for self-hosted Linux GitHub Actions runners with
   - `inode`
 - downloadable artifact/report generation
 
+## v1.0.0 Status
+
+This repository is currently published as `v1.0.0`.
+
+The core action contract is working and validated for the tested path:
+
+- `mode: start`
+- `mode: track`
+- `mode: finalize`
+- named step tracking
+- report artifact generation
+- hosted HTML report review
+
+At the same time, this is still a `v1.0.0` release, not the final polished production shape of the project.
+
+## Future Tightening
+
+The following improvements are planned for future versions so the project stays honest about current gaps while still being usable today:
+
+- improve built-in Git and PR context capture so reports explain changed files and workflow scope without extra repo-specific wiring
+- improve build, preview, cleanup, and test breakdown capture so phase summaries are more complete out of the box
+- make cleanup reporting clearer when high disk usage is caused by older runner state outside the current CI run
+- better separate generic action features from project-specific report enrichment
+- reduce environment-specific assumptions in sample outputs and documentation
+- continue improving release validation so published tags more closely reflect real multi-repo adoption testing
+- keep refining presentation and report readability without changing the stable `uses:` contract
+- expand documentation around expected runner prerequisites, storage behavior, and interpretation of warnings
+- evaluate broader support later for richer live hosting, additional CI patterns, and deeper sub-step visibility
+
 ## Deferred For Later
 
 - tracking individual lines or sub-step markers inside a single shell block
