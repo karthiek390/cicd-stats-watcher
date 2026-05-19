@@ -146,6 +146,42 @@ The current action is designed for self-hosted Linux GitHub Actions runners with
 - `docker`
 - standard Unix tools like `df`, `awk`, `grep`, `sed`, `wc`, `find`
 
+## Marketplace Note
+
+This repository is being kept compatible with GitHub Marketplace publication.
+
+GitHub's Marketplace requirements for actions are stricter than normal repository usage:
+
+- the repository must be public
+- the root must contain a single `action.yml` or `action.yaml`
+- the repository must not contain active workflow files under `.github/workflows/`
+
+Because of that, the action validation workflow is stored in this repository as a template file instead of an active workflow:
+
+- [reference/action-validation.workflow.txt]
+
+That template preserves the validation logic for development use while keeping the published action repository Marketplace-friendly.
+
+If you want to restore the validation workflow in a development clone or in a separate non-Marketplace repository, use:
+
+```bash
+mkdir -p .github/workflows
+cp reference/action-validation.workflow.txt .github/workflows/action-validation.yml
+```
+
+If you want to disable it again before Marketplace publication, use:
+
+```bash
+rm -f .github/workflows/action-validation.yml
+```
+
+The validation workflow checks:
+
+- action metadata and required bundled files
+- a successful `start -> track -> finalize` path
+- a failing tracked-step path
+- default input behavior
+
 ## What v1 Supports
 
 - GitHub Actions only
