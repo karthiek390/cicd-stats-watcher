@@ -1,5 +1,5 @@
 name: "CICD Stats Watcher"
-description: "GitHub Actions-first interface for self-hosted runner stats tracking."
+description: "GitHub Action for tracking self-hosted runner CI stats."
 author: "karthiek390"
 
 inputs:
