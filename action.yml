@@ -98,3 +98,7 @@ runs:
       run: |
         set -euo pipefail
         bash "${GITHUB_ACTION_PATH}/action/dispatch.sh"
+
+branding:
+  icon: "activity"
+  color: "blue"
